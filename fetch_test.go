@@ -21,6 +21,7 @@ func Example() {
 	os.Args = []string{"", srv.URL}
 	main()
 	// Output:
+	// HTTP Status Code:  200 OK
 	// <html>
 	// <html xmlns="http://www.w3.org/1999/xhtml">
 	// <head>
@@ -87,7 +88,7 @@ func TestFetch_remote(t *testing.T) {
 		contains string
 	}{
 		{"http://www.pudim.com.br", pudimWebPage},
-		{"https://status.github.com/", "GitHub System Status1"},
+		{"https://status.github.com/", "GitHub System Status"},
 	}
 	for _, test := range tests {
 		buf := new(bytes.Buffer)
