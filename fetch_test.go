@@ -1,22 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
+	"testing"
 )
 
 func Example() {
 	srv := httptest.NewServer(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(pudim))
+			w.Write([]byte(pudimWebPage))
 		}))
 	defer srv.Close()
 
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 	os.Args = []string{"", srv.URL}
-
 	main()
 	// Output:
 	// <html>
@@ -50,7 +52,56 @@ func Example() {
 	// </html>
 }
 
-var pudim = `<html>
+func TestFetch_local(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte(pudimWebPage))
+		}))
+	defer srv.Close()
+
+	var tests = []struct {
+		url string
+	}{
+		{srv.URL},
+		{strings.Trim(srv.URL, "http://")},
+	}
+	for _, test := range tests {
+		buf := new(bytes.Buffer)
+		err := Fetch(test.url, buf)
+		if err != nil {
+			t.Fatalf("Fetch(%q, buffer):\n%v", test.url, err)
+		}
+		if buf.String() != pudimWebPage {
+			t.Errorf("\n\tExpected: \n%q\n\tGot: %q", pudimWebPage, buf.String())
+		}
+	}
+}
+
+func TestFetch_remote(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Test ignored [option -test.short]")
+	}
+
+	var tests = []struct {
+		url      string
+		contains string
+	}{
+		{"http://www.pudim.com.br", pudimWebPage},
+		{"https://status.github.com/", "GitHub System Status1"},
+	}
+	for _, test := range tests {
+		buf := new(bytes.Buffer)
+		err := Fetch(test.url, buf)
+		if err != nil {
+			t.Fatalf("Fetch(%q, buffer):\n%v", test.url, err)
+		}
+		if !strings.Contains(buf.String(), test.contains) {
+			t.Errorf("\n\t%q\n\tShould contain %q", buf.String()[0:200]+"...", test.contains)
+		}
+	}
+}
+
+const pudimWebPage = `<html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>Pudim</title>
