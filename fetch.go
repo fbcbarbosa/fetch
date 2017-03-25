@@ -31,6 +31,8 @@ func Fetch(url string, dst io.Writer) error {
 		return err
 	}
 
+	fmt.Println("HTTP Status Code: ", resp.Status)
+
 	_, err = io.Copy(dst, resp.Body)
 	resp.Body.Close()
 
